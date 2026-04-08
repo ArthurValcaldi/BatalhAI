@@ -16,12 +16,21 @@ agente1_x = 100
 agente1_y = 50
 agente1_vel_y = 0
 agente1_cor = (0,255,100) #agente 1 é verde
+agente1_nochao = True
+
 
 #bloco do agente 2
 agente2_x = 600
 agente2_y = 330
 agente2_cor = (255,50,0) #agente 2 é vermelho
 agente2_vel_y = 0
+agente2_nochao = True 
+
+def obter_estado(agente1_y, agente2_y, agente1_x, agente2_x, agente1_nochao, agente2_nochao):
+    return (agente1_y, agente2_y, agente1_x, agente2_x, agente1_nochao, agente2_nochao)
+
+acao_IA1 = 0 #0 = parado, 1 = pular, 2 = socar
+acao_IA2 = 0 #0 = parado, 1 = pular, 2 = socar
 
 #parte 1: os eventos do jogo
 while True:
@@ -31,20 +40,34 @@ while True:
             sys.exit()
         if event.type == pygame.KEYDOWN: #verifica se uma tecla foi pressionada
            if event.key == pygame.K_SPACE: #Se a tecla pressionada for a barra de espaço, o boneco pula
-            agente1_vel_y = -10 #define a velocidade vertical do agente 1 para um valor negativo, fazendo com que ele suba'
+            agente1_vel_y = -10 #define a velocidade vertical do agente 1 para um valor negativo, fazendo com que ele suba
+        if acao_IA1 == 1 and agente1_nochao:
+            agente1_vel_y = -10
+            agente1_nochao = False
+        if agente1_y > 330:
+            agente1_y = 330
+            agente1_vel_y = 0
+            agente1_nochao = True
+            
+
+    estado_atual = obter_estado(agente1_y, agente2_y, agente1_x, agente2_x, agente1_nochao, agente2_nochao) #obtém o estado atual do jogo 
+    print(estado_atual) #imprime o estado atual para debug 
 
     #parte 2: a lógica da física
     agente1_vel_y += gravidade
     agente1_y += agente1_vel_y
-    if agente1_y > 330:
+    if agente1_y >= 330:
         agente1_y = 330
         agente1_vel_y = 0
+        agente1_nochao = True
 
+    # Agente 2
     agente2_vel_y += gravidade
     agente2_y += agente2_vel_y
-    if agente2_y > 330:
+    if agente2_y >= 330:
         agente2_y = 330
         agente2_vel_y = 0
+        agente2_nochao = True
 
     #parte 3: a renderização
     tela.fill((30,30,30)) #cor cinza para o fundo
