@@ -24,7 +24,7 @@ agente2_x = 600
 agente2_y = 330
 agente2_cor = (255,50,0) #agente 2 é vermelho
 agente2_vel_y = 0
-agente2_nochao = True 
+agente2_nochao = True
 
 def obter_estado(agente1_y, agente2_y, agente1_x, agente2_x, agente1_nochao, agente2_nochao):
     return (agente1_y, agente2_y, agente1_x, agente2_x, agente1_nochao, agente2_nochao)
