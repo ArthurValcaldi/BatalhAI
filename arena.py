@@ -28,66 +28,90 @@ agente2_vel_y = 0
 agente2_nochao = True
 vida_agente2 = 100
 
-def obter_estado(agente1_y, agente2_y, agente1_x, agente2_x, agente1_nochao, agente2_nochao):
-    return (agente1_y, agente2_y, agente1_x, agente2_x, agente1_nochao, agente2_nochao)
-
 acao_IA1 = 0 #0 = parado, 1 = pular, 2 = socar
 acao_IA2 = 0 #0 = parado, 1 = pular, 2 = socar
+distancia = abs(agente1_x - agente2_x)
+
+
+def obter_estado_completo(agente1_y, agente1_x, agente1_nochao, acao_IA1, vida_agente1, agente2_y, agente2_x, agente2_nochao, acao_IA2, vida_agente2, distancia, gravidade,):
+    
+    return (agente1_y, agente1_x, agente1_nochao, acao_IA1, vida_agente1,
+            agente2_y, agente2_x, agente2_nochao, acao_IA2, vida_agente2)
+
+def obter_estadoa1(agente1_y, agente1_x, agente1_nochao, acao_IA1, vida_agente1):
+    return (agente1_y, agente1_x, agente1_nochao, acao_IA1, vida_agente1)
+
+def obter_estadoa2(agente2_y, agente2_x, agente2_nochao, acao_IA2, vida_agente2):
+    return (agente2_y, agente2_x, agente2_nochao, acao_IA2, vida_agente2)
+
+
+
 
 #parte 1: os eventos do jogo
 while True:
-    # Resetamos as ações a cada frame para que o comando não fique "travado"
+    # 1. RESET DE INTENÇÕES
+    # Todo frame começa sem nenhuma ação pendente
     acao_IA1 = 0
     acao_IA2 = 0
-    keys = pygame.key.get_pressed() #verifica quais teclas estão sendo pressionadas
-    distancia = abs(agente1_x - agente2_x) #calcula a distância horizontal entre os dois agentes
+    
+    # 2. ENTRADA DE DADOS
+    distancia = abs(agente1_x - agente2_x)
+    keys = pygame.key.get_pressed()
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
-        
 
-        #Bloco agente 1
-        #Movimentação do agente 1
+        # Comandos de "Um Clique" (Soco)
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_f:
+                acao_IA1 = 2 # Intenção: Socar
+            if event.key == pygame.K_DOWN:
+                acao_IA2 = 2 # Intenção: Socar
 
-        if acao_IA1 == 1:
-            agente1_vel_y = -10 #define a velocidade vertical do agente 1 para um valor negativo, fazendo com que ele suba
-        if agente1_y < 330:
-            agente1_nochao = False #se o agente 1 estiver no ar, a variável "no chão" é falsa
-        if keys[pygame.K_a]:
-            agente1_x -= 5 #move pra esquerda
-        if keys[pygame.K_d]:
-            agente1_x += 5 #move pra direita
+    # Comandos de Movimento (Pulo e Andar)
+    if keys[pygame.K_w] and agente1_nochao:
+        acao_IA1 = 1 # Intenção: Pular
+    if keys[pygame.K_UP] and agente2_nochao:
+        acao_IA2 = 1 # Intenção: Pular
 
-        if keys[pygame.K_w] and agente1_nochao:
-            acao_IA1 = 1 #ação de pular
-            agente1_vel_y = -10 #define a velocidade vertical do agente 1 para um valor negativo, fazendo com que ele suba
-            agente1_nochao = False #define que o agente 1 não está mais no chão, para evitar que ele possa pular novamente enquanto estiver no ar
-            
-        if keys[pygame.K_f]:
-            acao_IA1 = 2 #ação de socar
-            if distancia < 50:
-                vida_agente2 -= 1 #diminui a vida do agente 2 em 1 ponto se o agente 1 socar e acertar
-            
-        #Bloco do agente 2
-        #Movimentação do agente 2
-        if keys[pygame.K_LEFT]: 
-            agente2_x -= 5
-        if keys[pygame.K_RIGHT]: 
-            agente2_x += 5
-        if keys[pygame.K_UP] and agente2_nochao:
-            acao_IA2 = 1
-            agente2_vel_y = -10
-            agente2_nochao = False
-        if keys[pygame.K_DOWN]:
-            acao_IA2 = 2
+    # --- ESPAÇO PARA A IA ---
+    # No futuro, o código do Luiz Paulo vai apenas dizer:
+    # acao_IA1 = cérebro.decidir() 
+    # E o resto do código abaixo vai funcionar sozinho!
+    # ------------------------
+
+    # 3. EXECUÇÃO DAS AÇÕES
+    # Execução Agente 1
+    if acao_IA1 == 1: # Pular
+        agente1_vel_y = -10
+        agente1_nochao = False
+    elif acao_IA1 == 2: # Socar
         if distancia < 50:
-            vida_agente1 -= 1
+            vida_agente2 -= 10
+            print("Ação Executada: Agente 1 socou e acertou!")
+        else:
+            print("Ação Executada: Agente 1 socou, mas errou!")
 
-    estado_atual = obter_estado(agente1_y, agente2_y, agente1_x, agente2_x, agente1_nochao, agente2_nochao) #obtém o estado atual do jogo 
-    print(estado_atual) #imprime o estado atual para debug 
+    # Execução Agente 2
+    if acao_IA2 == 1: # Pular
+        agente2_vel_y = -10
+        agente2_nochao = False
+    elif acao_IA2 == 2: # Socar
+        if distancia < 50:
+            vida_agente1 -= 10
+            print("Ação Executada: Agente 2 socou e acertou!")
+        else:
+            print("Ação Executada: Agente 2 socou, mas errou!")
 
-    #parte 2: a lógica da física
+    # 4. MOVIMENTAÇÃO LATERAL (Sempre ativa)
+    if keys[pygame.K_a]: agente1_x -= 5
+    if keys[pygame.K_d]: agente1_x += 5
+    if keys[pygame.K_LEFT]: agente2_x -= 5
+    if keys[pygame.K_RIGHT]: agente2_x += 5
+
+    #5: a lógica da física
     agente1_vel_y += gravidade
     agente1_y += agente1_vel_y
     if agente1_y >= 330:
@@ -106,7 +130,10 @@ while True:
     agente1_x = max(0, min(agente1_x, LARGURA - 20))
     agente2_x = max(0, min(agente2_x, LARGURA - 20))
 
-    #parte 3: a renderização
+    vida_agente1 = max(0, vida_agente1) #garante que a vida do agente 1 não fique negativa
+    vida_agente2 = max(0, vida_agente2) #garante que a vida do agente 2 não fique negativa
+    
+    #parte 6: a renderização
     tela.fill((30,30,30)) #cor cinza para o fundo
     pygame.draw.rect(tela, agente1_cor, (agente1_x, agente1_y, 20, 50)) #desenha o "boneco em cor RGB verde e com as dimensões 20x50
     pygame.draw.rect(tela, agente2_cor, (agente2_x, agente2_y, 20, 50)) #desenha o agente 2
@@ -117,5 +144,5 @@ while True:
     pygame.draw.rect(tela, (0, 255, 0), (580, 20, vida_agente2 * 2, 20)) #parte verde (vida real do agente 2)
 
     pygame.display.flip() #atualiza a tela
-    relogio.tick(60) #define a taxa de atualização para 60 quadros por segundo (o VScode completando os comentários para mim é muito bom véi kakaka)
+    relogio.tick(60) #define a taxa de atualização para 60 quadros por segundo
   
