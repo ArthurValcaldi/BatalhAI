@@ -4,18 +4,23 @@
 #isso é modularização
 
 # Dimensões da tela
-LARGURA = 800
-ALTURA = 400
+LARGURA = 1800
+ALTURA = 800
 
 # Física
 GRAVIDADE = 0.5
-CHAO_Y = 330 # Centralizar o valor do chão facilita mudar depois
+CHAO_Y = 750 # Centralizar o valor do chão facilita mudar depois
 
 # Atributos dos Agentes
 VIDA_INICIAL = 100
 VELOCIDADE_MOVIMENTO = 5
 FORCA_PULO = -10
-DANO_SOCO = 10
-DISTANCIA_CONTATO = 50
 AGENTE_LARGURA = 20
 AGENTE_ALTURA = 50
+
+# Atributos de Luta
+DANO_CHUTE = 15
+ALCANCE_CHUTE = 70
+REDUCAO_DEFESA = 0.5  # Toma 50% a menos de dano
+DANO_SOCO = 10
+ALCANCE_SOCO = 50

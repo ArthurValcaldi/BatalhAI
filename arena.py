@@ -1,11 +1,15 @@
 import pygame
 import sys
-from config import LARGURA, ALTURA, GRAVIDADE, CHAO_Y, VIDA_INICIAL, VELOCIDADE_MOVIMENTO, FORCA_PULO, DANO_SOCO, DISTANCIA_CONTATO, AGENTE_LARGURA, AGENTE_ALTURA
+import actions  # Importa o arquivo de lógica de luta
+from config import (LARGURA, ALTURA, GRAVIDADE, CHAO_Y, VIDA_INICIAL, VELOCIDADE_MOVIMENTO, FORCA_PULO, DANO_SOCO, ALCANCE_SOCO, AGENTE_LARGURA, AGENTE_ALTURA, DANO_CHUTE, ALCANCE_CHUTE, REDUCAO_DEFESA)
 
 pygame.init()
-
 tela = pygame.display.set_mode((LARGURA, ALTURA)) #Criar a janela da simulação
 relogio = pygame.time.Clock() #relógio que conta o tempo do projeto
+
+spr_sheet_spartan = pygame.image.load('Sprites/spartan.png').convert_alpha() #carrega a spritesheet do espartano
+
+
 
 #Bloco do agente 1
 agente1_x = 100
@@ -43,7 +47,7 @@ def obter_estadoa2(agente2_y, agente2_x, agente2_nochao, acao_IA2, vida_agente2)
 
 
 
-#parte 1: os eventos do jogo
+#Os eventos do jogo
 while True:
     # 1. RESET DE INTENÇÕES
     # Todo frame começa sem nenhuma ação pendente
@@ -53,53 +57,52 @@ while True:
     # 2. ENTRADA DE DADOS
     distancia = abs(agente1_x - agente2_x)
     keys = pygame.key.get_pressed()
+    
+    # DEFESA: Verificamos se a tecla está segurada
+    if keys[pygame.K_h]: 
+        acao_IA1 = 4
+    if keys[pygame.K_m]: 
+        acao_IA2 = 4
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
 
-        # Comandos de "Um Clique" (Soco)
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_f:
-                acao_IA1 = 2 # Intenção: Socar
-            if event.key == pygame.K_DOWN:
-                acao_IA2 = 2 # Intenção: Socar
-
+            # Agente 1
+            if event.key == pygame.K_f: acao_IA1 = 2 # Soco
+            if event.key == pygame.K_g: acao_IA1 = 3 # Chute
+            
+            # Agente 2
+            if event.key == pygame.K_DOWN: acao_IA2 = 2 # Soco
+            if event.key == pygame.K_k: acao_IA2 = 3 # Chute
+            
     # Comandos de Movimento (Pulo e Andar)
     if keys[pygame.K_w] and agente1_nochao:
         acao_IA1 = 1 # Intenção: Pular
     if keys[pygame.K_UP] and agente2_nochao:
         acao_IA2 = 1 # Intenção: Pular
 
-    # --- ESPAÇO PARA A IA ---
-    # No futuro, o código do Luiz Paulo vai apenas dizer:
-    # acao_IA1 = cérebro.decidir() 
-    # E o resto do código abaixo vai funcionar sozinho!
-    # ------------------------
+    # --- EXECUÇÃO DAS AÇÕES (Parte 3 atualizada) ---
+    
+    # Verificamos se alguém está defendendo antes de calcular o dano
+    a1_defendendo = (acao_IA1 == 4)
+    a2_defendendo = (acao_IA2 == 4)
 
-    # 3. EXECUÇÃO DAS AÇÕES
-    # Execução Agente 1
-    if acao_IA1 == 1: # Pular
-        agente1_vel_y = FORCA_PULO
-        agente1_nochao = False
-    elif acao_IA1 == 2: # Socar
-        if distancia < DISTANCIA_CONTATO:
-            vida_agente2 -= DANO_SOCO
-            print("Ação Executada: Agente 1 socou e acertou!")
-        else:
-            print("Ação Executada: Agente 1 socou, mas errou!")
+    # Processar ataques do Agente 1
+    if acao_IA1 in [2, 3]: # Se for Soco (2) ou Chute (3)
+        dano = actions.calcular_dano(acao_IA1, distancia, a2_defendendo)
+        vida_agente2 -= dano
+        if dano > 0: print(f"Agente 1 atingiu o Agente 2! Dano: {dano}")
+        else: print("Agente 1 atacou e errou")
 
-    # Execução Agente 2
-    if acao_IA2 == 1: # Pular
-        agente2_vel_y = FORCA_PULO
-        agente2_nochao = False
-    elif acao_IA2 == 2: # Socar
-        if distancia < DISTANCIA_CONTATO:
-            vida_agente1 -= DANO_SOCO
-            print("Ação Executada: Agente 2 socou e acertou!")
-        else:
-            print("Ação Executada: Agente 2 socou, mas errou!")
+    # Processar ataques do Agente 2
+    if acao_IA2 in [2, 3]:
+        dano = actions.calcular_dano(acao_IA2, distancia, a1_defendendo)
+        vida_agente1 -= dano
+        if dano > 0: print(f"Agente 2 atingiu o Agente 1! Dano: {dano}")
+        else: print("Agente 2 atacou e errou")
 
     # 4. MOVIMENTAÇÃO LATERAL (Sempre ativa)
     if keys[pygame.K_a]: agente1_x -= VELOCIDADE_MOVIMENTO
@@ -131,14 +134,37 @@ while True:
     
     #parte 6: a renderização
     tela.fill((30,30,30)) #cor cinza para o fundo
-    pygame.draw.rect(tela, agente1_cor, (agente1_x, agente1_y, AGENTE_LARGURA, AGENTE_ALTURA)) #desenha o "boneco em cor RGB verde e com as dimensões 20x50
-    pygame.draw.rect(tela, agente2_cor, (agente2_x, agente2_y, AGENTE_LARGURA, AGENTE_ALTURA)) #desenha o agente 2
-    pygame.draw.rect(tela, (255, 0, 0), (20, 20, 200, 20)) #parte vermelha (fundo da barra de vida)
-    pygame.draw.rect(tela, (0, 255, 0), (20, 20, vida_agente1 * 2, 20)) #parte verde (vida real do agente 1)
+    pygame.draw.rect(tela, (100, 100, 100), (0, CHAO_Y, LARGURA, ALTURA - CHAO_Y)) #desenha o chão
     
-    pygame.draw.rect(tela, (255, 0, 0), (580, 20, 200, 20)) #parte vermelha (fundo da barra de vida)
-    pygame.draw.rect(tela, (0, 255, 0), (580, 20, vida_agente2 * 2, 20)) #parte verde (vida real do agente 2)
+    #Alinha a posição dos agentes no offset dos sprites para que eles fiquem centralizados
+    pos_a1y_alinhada = agente1_y - 184
+    pos_a1x_alinhada = agente1_x - 88
+    pos_a2y_alinhada = agente2_y - 184
+    pos_a2x_alinhada = agente2_x - 88
+    
+    tela.blit(spr_sheet_spartan, (pos_a1x_alinhada,pos_a1y_alinhada), (0, 0, 256, 256)) #desenha o espartano no agente 1
+    
+    tela.blit(spr_sheet_spartan, (pos_a2x_alinhada,pos_a2y_alinhada), (0, 0, 256, 256)) #desenha o espartano no agente 2
 
+    #Desenho das barras de vida
+    largura_barra = LARGURA *0.2 #20% da largura da tela
+    altura_barra = ALTURA * 0.05 #5% da altura da tela
+    margem_barra = 20 #margem entre a barra e a borda da tela
+    
+    #cálculo de preenchimento
+    percentual_vida_a1 = vida_agente1 / VIDA_INICIAL
+    percentual_vida_a2 = vida_agente2 / VIDA_INICIAL
+    
+    #Desenho da barra do agente 1
+    pygame.draw.rect(tela, (255,0,0), (margem_barra, margem_barra, largura_barra, altura_barra)) #fundo vermelho
+    pygame.draw.rect(tela, (0,255,0), (margem_barra, margem_barra, largura_barra * percentual_vida_a1, altura_barra)) #preenchimento verde
+    
+    #Desenho da barra do agente 2
+    x_barra2 = LARGURA - largura_barra - margem_barra
+    pygame.draw.rect(tela, (255,0,0), (x_barra2, margem_barra, largura_barra, altura_barra)) #fundo vermelho
+    pygame.draw.rect(tela, (0, 255, 0), (x_barra2 + (largura_barra * (1 - percentual_vida_a2)), margem_barra, largura_barra * percentual_vida_a2, altura_barra)) #preenchimento verde
+    
+    #atualização de tela e controle de FPS  
     pygame.display.flip() #atualiza a tela
     relogio.tick(60) #define a taxa de atualização para 60 quadros por segundo
   
