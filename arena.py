@@ -58,6 +58,8 @@ def desenhar_agente(agente, tela):
     linha = 0
     coluna = 0
     animando = False
+    movendo_frente = False
+    movendo_tras = False
 
     # 1. DEFINIÇÃO DA LINHA BASEADA NO ESTADO
     if agente['estado'] == 'neutro':
@@ -77,13 +79,12 @@ def desenhar_agente(agente, tela):
         animando = True
 
     # 2. LÓGICA DE MOVIMENTO (SPRITES FIXOS)
-    # Se estiver no chão e não estiver atacando, checamos se está andando
+    # Note: input-driven movement removed. Movement-driven animation
+    # can be enabled later by setting `movendo_frente`/`movendo_tras` in AI.
     if agente['nochao'] and 'atacando' not in agente['estado']:
-        keys = pygame.key.get_pressed()
-        
-        # Agente 1 (Exemplo com setas ou WASD, ajuste conforme seu input)
-        movendo_frente = (agente['direcao'] == 1 and keys[pygame.K_RIGHT]) or (agente['direcao'] == -1 and keys[pygame.K_LEFT])
-        movendo_tras = (agente['direcao'] == 1 and keys[pygame.K_LEFT]) or (agente['direcao'] == -1 and keys[pygame.K_RIGHT])
+        # Default: not moving. AI may toggle movement flags on the agent dict
+        movendo_frente = agente.get('movendo_frente', False)
+        movendo_tras = agente.get('movendo_tras', False)
 
         if movendo_frente:
             linha = 0 # Linha 1
@@ -115,7 +116,7 @@ def desenhar_agente(agente, tela):
         sprite = pygame.transform.flip(sprite, True, False)
     
     # Alinhamento no chão
-    pos_y_alinhada = agente['y'] - 184 #esse valor encaixa perfeitamente, NÃO ALTERAR!!!
+    pos_y_alinhada = agente['y'] - 184 #esse valor encaixa perfeitamente, NÃO MEXA!!!
     pos_x_alinhada = agente['x'] - 128
     tela.blit(sprite, (pos_x_alinhada, pos_y_alinhada))
 
@@ -125,41 +126,27 @@ while True:
     # Todo frame começa sem nenhuma ação pendente
     acao_IA1 = 0
     acao_IA2 = 0
-    
-    # 2. ENTRADA DE DADOS
+    # 2. ENTRADA DE DADOS (AI-controlled)
     distancia = abs(agente1['x'] - agente2['x'])
-    keys = pygame.key.get_pressed()
-    
-    # DEFESA: Verificamos se a tecla está segurada
-    if keys[pygame.K_h]: 
-        acao_IA1 = 4
-    if keys[pygame.K_m]: 
-        acao_IA2 = 4
 
+    # Consume events but only keep window-close events
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
 
-        if event.type == pygame.KEYDOWN:
-            # Agente 1
-            if event.key == pygame.K_f: acao_IA1 = 7 # Soco
-            if event.key == pygame.K_g: acao_IA1 = 9 # Chute
-            if event.key == pygame.K_t: acao_IA1 = 12 # Mudar Direção
-            if event.key == pygame.K_SPACE:
-                # Chama o processar_acao com a constante PULAR (que é 2)
-                agente1, agente2 = actions.processar_acao(agente1, agente2, actions.PULAR)
+    # AI placeholders: return (action, move_dir)
+    def get_ai_action_and_move(agente, oponente):
+        # Replace this stub with your neural network / controller.
+        # Expected to return: (acao_int, move_dir)
+        # - acao_int: integer action (use constants from actions.py)
+        # - move_dir: -1 (left), 0 (none), 1 (right)
+        return 0, 0
+
+    acao_IA1, move_dir1 = get_ai_action_and_move(agente1, agente2)
+    acao_IA2, move_dir2 = get_ai_action_and_move(agente2, agente1)
             
-            # Agente 2
-            if event.key == pygame.K_DOWN: acao_IA2 = 7 # Soco
-            if event.key == pygame.K_k: acao_IA2 = 9 # Chute
-            if event.key == pygame.K_r: acao_IA2 = 12 # Mudar Direção
-            
-    # Comandos de Movimento (Pulo e Andar)
-    if keys[pygame.K_w] and agente1['nochao']:
-        acao_IA1 = 1 # Intenção: Pular
-    if keys[pygame.K_UP] and agente2['nochao']:
-        acao_IA2 = 1 # Intenção: Pular
+    # Comandos de Movimento (Pulo) are now produced by the AI via acao_IA
 
     # --- EXECUÇÃO DAS AÇÕES ---
     
@@ -171,11 +158,30 @@ while True:
     agente1, agente2 = actions.processar_acao(agente1, agente2, acao_IA1)
     agente2, agente1 = actions.processar_acao(agente2, agente1, acao_IA2)   
 
-    # 4. MOVIMENTAÇÃO LATERAL (Sempre ativa)
-    if keys[pygame.K_a]: agente1['x'] -= VELOCIDADE_MOVIMENTO
-    if keys[pygame.K_d]: agente1['x'] += VELOCIDADE_MOVIMENTO
-    if keys[pygame.K_LEFT]: agente2['x'] -= VELOCIDADE_MOVIMENTO
-    if keys[pygame.K_RIGHT]: agente2['x'] += VELOCIDADE_MOVIMENTO
+    # 4. MOVIMENTAÇÃO LATERAL (Sempre ativa) - controlled by AI
+    if move_dir1 < 0:
+        agente1['x'] -= VELOCIDADE_MOVIMENTO
+        agente1['movendo_frente'] = (agente1['direcao'] == 1)
+        agente1['movendo_tras'] = (agente1['direcao'] == -1)
+    elif move_dir1 > 0:
+        agente1['x'] += VELOCIDADE_MOVIMENTO
+        agente1['movendo_frente'] = (agente1['direcao'] == -1)
+        agente1['movendo_tras'] = (agente1['direcao'] == 1)
+    else:
+        agente1['movendo_frente'] = False
+        agente1['movendo_tras'] = False
+
+    if move_dir2 < 0:
+        agente2['x'] -= VELOCIDADE_MOVIMENTO
+        agente2['movendo_frente'] = (agente2['direcao'] == 1)
+        agente2['movendo_tras'] = (agente2['direcao'] == -1)
+    elif move_dir2 > 0:
+        agente2['x'] += VELOCIDADE_MOVIMENTO
+        agente2['movendo_frente'] = (agente2['direcao'] == -1)
+        agente2['movendo_tras'] = (agente2['direcao'] == 1)
+    else:
+        agente2['movendo_frente'] = False
+        agente2['movendo_tras'] = False
 
     #5: a lógica da física
     # 1. Aplica gravidade
