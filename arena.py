@@ -19,7 +19,9 @@ agente1 = {
     'vida': VIDA_INICIAL,
     'direcao': 1,
     'estado': 'neutro',
-    'nochao': True
+    'nochao': True,
+    'frame': 0,
+    'timer_frame': 0
 }
 
 
@@ -31,7 +33,10 @@ agente2 = {
     'vida': VIDA_INICIAL,
     'direcao': -1,
     'estado': 'neutro',
-    'nochao': True
+    'nochao': True,
+    'frame': 0,
+    'timer_frame': 0
+    
 }
 
 acao_IA1 = 0 
@@ -48,6 +53,71 @@ def obter_estadoa1():
 
 def obter_estadoa2():
     return (agente2['x'], agente2['y'], agente2['vida'], agente2['estado'])
+
+def desenhar_agente(agente, tela):
+    linha = 0
+    coluna = 0
+    animando = False
+
+    # 1. DEFINIÇÃO DA LINHA BASEADA NO ESTADO
+    if agente['estado'] == 'neutro':
+        linha = 0
+        coluna = 0
+    
+    elif agente['estado'] == 'aereo':
+        linha = 2
+        animando = True # O pulo continua animando
+        
+    elif agente['estado'] == 'atacandoL': # Ataque Leve
+        linha = 0
+        animando = True
+        
+    elif agente['estado'] == 'atacandoG': # Ataque Pesado (Ação 9/G)
+        linha = 1 # Se na sua sheet o ataque pesado for linha 2, mude para 1
+        animando = True
+
+    # 2. LÓGICA DE MOVIMENTO (SPRITES FIXOS)
+    # Se estiver no chão e não estiver atacando, checamos se está andando
+    if agente['nochao'] and 'atacando' not in agente['estado']:
+        keys = pygame.key.get_pressed()
+        
+        # Agente 1 (Exemplo com setas ou WASD, ajuste conforme seu input)
+        movendo_frente = (agente['direcao'] == 1 and keys[pygame.K_RIGHT]) or (agente['direcao'] == -1 and keys[pygame.K_LEFT])
+        movendo_tras = (agente['direcao'] == 1 and keys[pygame.K_LEFT]) or (agente['direcao'] == -1 and keys[pygame.K_RIGHT])
+
+        if movendo_frente:
+            linha = 0 # Linha 1
+            coluna = 2 # Sprite 3 (Índice 2)
+            animando = False
+        elif movendo_tras:
+            linha = 5 # Linha 6 (Índice 5)
+            coluna = 0 # Sprite 1 (Índice 0)
+            animando = False
+
+    # 3. CONTROLE DE ANIMAÇÃO
+    if animando:
+        agente['timer_frame'] += 1
+        if agente['timer_frame'] >= 18:
+            agente['frame'] = (agente['frame'] + 1) % 3
+            agente['timer_frame'] = 0
+        coluna = agente['frame']
+    else:
+        agente['timer_frame'] = 0
+        # Se não estiver animando e não for movimento, coluna volta a 0 (neutro)
+        if not (movendo_frente or movendo_tras):
+            coluna = 0
+
+    # 4. RENDERIZAÇÃO
+    area_corte = (coluna * 256, linha * 256, 256, 256)
+    sprite = spr_sheet_spartan.subsurface(area_corte)
+    
+    if agente['direcao'] == -1:
+        sprite = pygame.transform.flip(sprite, True, False)
+    
+    # Alinhamento no chão
+    pos_y_alinhada = agente['y'] - 184 #esse valor encaixa perfeitamente, NÃO ALTERAR!!!
+    pos_x_alinhada = agente['x'] - 128
+    tela.blit(sprite, (pos_x_alinhada, pos_y_alinhada))
 
 #Os eventos do jogo
 while True:
@@ -76,6 +146,9 @@ while True:
             if event.key == pygame.K_f: acao_IA1 = 7 # Soco
             if event.key == pygame.K_g: acao_IA1 = 9 # Chute
             if event.key == pygame.K_t: acao_IA1 = 12 # Mudar Direção
+            if event.key == pygame.K_SPACE:
+                # Chama o processar_acao com a constante PULAR (que é 2)
+                agente1, agente2 = actions.processar_acao(agente1, agente2, actions.PULAR)
             
             # Agente 2
             if event.key == pygame.K_DOWN: acao_IA2 = 7 # Soco
@@ -105,30 +178,30 @@ while True:
     if keys[pygame.K_RIGHT]: agente2['x'] += VELOCIDADE_MOVIMENTO
 
     #5: a lógica da física
+    # 1. Aplica gravidade
     agente1['vel_y'] += GRAVIDADE
+    agente2['vel_y'] += GRAVIDADE
+
+    # 2. Move no eixo Y
     agente1['y'] += agente1['vel_y']
+    agente2['y'] += agente2['vel_y']
+
+    # 3. Colisão com o Chão Agente 1
     if agente1['y'] >= CHAO_Y:
         agente1['y'] = CHAO_Y
         agente1['vel_y'] = 0
         agente1['nochao'] = True
-
-        # SE ELE ESTAVA ATACANDO NO AR, AGORA ELE PARA
-        if agente1['estado'] == 'atacandoAereo':
+        # Se ele estava no ar, volta para o estado neutro ao pousar
+        if agente1['estado'] == 'aereo':
             agente1['estado'] = 'neutro'
-            agente1['timer_acao'] = 0  # Libera o personagem depois do ataque aéreo
-            
-    # Agente 2
-    agente2['vel_y'] += GRAVIDADE  
-    agente2['y'] += agente2['vel_y']
+
+    # 4. Colisão com o Chão Agente 2
     if agente2['y'] >= CHAO_Y:
         agente2['y'] = CHAO_Y
         agente2['vel_y'] = 0
         agente2['nochao'] = True
-
-        # SE ELE ESTAVA ATACANDO NO AR, AGORA ELE PARA
-        if agente2['estado'] == 'atacandoAereo':
+        if agente2['estado'] == 'aereo':
             agente2['estado'] = 'neutro'
-            agente2['timer_acao'] = 0  # Libera o personagem depois do ataque aéreo
             
     # Impede de sair da tela
     agente1['x'] = max(0, min(agente1['x'], LARGURA - AGENTE_LARGURA))
@@ -141,23 +214,8 @@ while True:
     tela.fill((30,30,30)) #cor cinza para o fundo
     pygame.draw.rect(tela, (100, 100, 100), (0, CHAO_Y, LARGURA, ALTURA - CHAO_Y)) #desenha o chão
     
-    #Alinha a posição dos agentes no offset dos sprites para que eles fiquem centralizados
-    pos_a1y_alinhada = agente1['y'] - 184
-    pos_a1x_alinhada = agente1['x'] - 88
-    pos_a2y_alinhada = agente2['y'] - 184
-    pos_a2x_alinhada = agente2['x'] - 88
-    
-  # --- DESENHAR AGENTE 1 ---
-    sprite_a1 = spr_sheet_spartan.subsurface((0, 0, 256, 256))
-    if agente1['direcao'] == -1:
-        sprite_a1 = pygame.transform.flip(sprite_a1, True, False)
-    tela.blit(sprite_a1, (pos_a1x_alinhada, pos_a1y_alinhada))
-
-# --- DESENHAR AGENTE 2 ---
-    sprite_a2 = spr_sheet_spartan.subsurface((0, 0, 256, 256))
-    if agente2['direcao'] == -1:
-        sprite_a2 = pygame.transform.flip(sprite_a2, True, False)
-    tela.blit(sprite_a2, (pos_a2x_alinhada, pos_a2y_alinhada))
+    desenhar_agente(agente1, tela)
+    desenhar_agente(agente2, tela)
     
     #Desenho das barras de vida
     largura_barra = LARGURA *0.2 #20% da largura da tela

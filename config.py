@@ -53,3 +53,22 @@ DURACAO_PESADO_CURTO = DURACAO_PESADO
 DANO_QUEBRA_GUARDA = 5
 ALCANCE_QUEBRA_GUARDA = 40
 DURACAO_QUEBRA_GUARDA = DURACAO_LEVE
+
+#Configurações de renderização
+
+SPRITE_SIZE = 256
+
+# Mapeamento exato da nova Spritesheet (Linha = Índice - 1)
+LINHA_IDLE_ANDAR = 0   # Col 0: Idle, Col 1: Aguardando, Col 2: Andando
+LINHA_DEFESAS = 1      # Col 0: Padrão, Col 1: Baixa, Col 2: Reforçada
+LINHA_PULO = 2
+LINHA_MERGULHO = 3     # Ataque Aéreo (Ação 6)
+LINHA_ATAQUE_L = 4     # Ataque Leve Padrão (Ação 7)
+LINHA_ESTADOS = 5      # Col 0: Recuo, Col 1: Stun, Col 2: Derrotado
+LINHA_ATAQUE_L_ALTO = 6
+LINHA_ATAQUE_P_LONGO = 7
+LINHA_ATAQUE_P_CURTO = 8
+LINHA_QUEBRA_GUARDA = 9
+
+# Velocidade da animação (quanto menor, mais rápido troca de frame)
+frame_delay = 5

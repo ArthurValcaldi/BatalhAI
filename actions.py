@@ -35,17 +35,19 @@ def processar_acao(agente_atacante, agente_defensor, tipo_acao):
             agente_atacante['direcao'] *= -1
             
     #Pular tem prioridade sobre o movimento, então ele é processado antes
-    elif tipo_acao == PULAR:
+
+    if tipo_acao == PULAR:
         if agente_atacante['nochao']:
             agente_atacante['vel_y'] = FORCA_PULO
             agente_atacante['nochao'] = False
             agente_atacante['estado'] = 'aereo'
+        return agente_atacante, agente_defensor
     
-    elif 3 <= tipo_acao <= 5: # Defesas
+    if 3 <= tipo_acao <= 5: # Defesas
         agente_atacante['estado'] = 'defendendo'
 
 # --- BLOCO DE ATAQUES (6 a 11) ---
-    elif 6 <= tipo_acao <= 11:
+    if 6 <= tipo_acao <= 11:
         # Se for ataque aéreo (6), mas já estiver no chão, ignora
         if tipo_acao == ATAQUE_AEREO and agente_atacante['nochao']:
             return agente_atacante, agente_defensor 
@@ -77,7 +79,7 @@ def processar_acao(agente_atacante, agente_defensor, tipo_acao):
             agente_defensor['estado'] = 'desequilibrado'
             agente_defensor['timer_acao'] = 15 # Stun no inimigo
 
-    elif tipo_acao == PARADO and agente_atacante['nochao']:
+    if tipo_acao == PARADO and agente_atacante['nochao']:
         agente_atacante['estado'] = 'neutro'
 
     return agente_atacante, agente_defensor
